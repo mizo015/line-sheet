@@ -163,6 +163,7 @@ Rows/Page <input type="number" id="rowsPerPage" value="3" min="1">
 <button onclick="addEmptyCell()">Add Cell</button>
 <button id="exportPNG">Export PNG</button>
 <button id="exportPDF">Download PDF</button>
+<button id="printBtn">Print</button>
 </div>
 
 <!-- PAGE MAIN TITLE -->
@@ -464,6 +465,76 @@ exportPDF.onclick = async function () {
 
     document.body.removeChild(offscreen);
     pdf.save("line-sheet.pdf");
+};
+
+printBtn.onclick = async function () {
+    const cols = +document.getElementById("cols").value;
+    const padding = +document.getElementById("padding").value;
+    const gapVal = +document.getElementById("gap").value;
+    const aspectVal = +document.getElementById("aspect").value;
+    const font = document.getElementById("fontFamily").value;
+    const fontSizeVal = document.getElementById("fontSize").value;
+    const rowsPerPage = +document.getElementById("rowsPerPage").value;
+    const headerText = document.getElementById("pageTitle").value;
+    const footerText = document.getElementById("pageFooter").value;
+
+    const rows = [];
+    for (let i = 0; i < cells.length; i += cols) {
+        rows.push(cells.slice(i, i + cols));
+    }
+
+    const pages = [];
+    for (let i = 0; i < rows.length; i += rowsPerPage) {
+        pages.push(rows.slice(i, i + rowsPerPage));
+    }
+
+    if (pages.length === 0) pages.push([]);
+
+    // Build print HTML
+    let printHTML = `<html><head><style>
+        @page { size: A4; margin: 15mm; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: ${font}, sans-serif; }
+        .page { width: 100%; height: 100vh; position: relative; page-break-after: always; padding: 10px 0; }
+        .page:last-child { page-break-after: auto; }
+        .header { text-align: center; font-size: ${fontSizeVal * 1.5}px; font-weight: bold; margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: ${gapVal}px; }
+        .cell { border: 1px solid #eee; padding: ${padding}px; overflow: hidden; }
+        .aspect-wrapper { width: 100%; position: relative; }
+        .aspect-inner { position: absolute; inset: 0; }
+        .cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .cell-title { text-align: center; padding: 5px; font-size: ${fontSizeVal}px; }
+        .footer { text-align: center; font-size: ${fontSizeVal}px; position: absolute; bottom: 30px; left: 0; right: 0; }
+        .page-num { text-align: right; font-size: ${fontSizeVal * 0.75}px; color: #999; position: absolute; bottom: 10px; right: 0; }
+    </style></head><body>`;
+
+    for (let p = 0; p < pages.length; p++) {
+        printHTML += `<div class="page"><div class="header">${headerText}</div><div class="grid">`;
+
+        const pageCells = pages[p].flat();
+        pageCells.forEach(cellData => {
+            printHTML += `<div class="cell">`;
+            if (cellData.image) {
+                printHTML += `<div class="aspect-wrapper"${aspectVal !== 0 ? ` style="padding-top:${100 / aspectVal}%"` : ''}>`;
+                printHTML += `<div class="aspect-inner"><img src="${cellData.image}"></div></div>`;
+            }
+            printHTML += `<div class="cell-title">${cellData.title || ''}</div></div>`;
+        });
+
+        printHTML += `</div>`;
+        printHTML += `<div class="footer">${footerText}</div>`;
+        printHTML += `<div class="page-num">Page ${p + 1} of ${pages.length}</div>`;
+        printHTML += `</div>`;
+    }
+
+    printHTML += `</body></html>`;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printHTML);
+    printWindow.document.close();
+    printWindow.onload = function () {
+        printWindow.print();
+    };
 };
 
 document.querySelectorAll("input, select").forEach(el => {
