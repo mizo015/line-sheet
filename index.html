@@ -3,7 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LineSheet Studio</title>
+<title>LineSheet Studio — Free Online Line Sheet Maker for Wholesale & Fashion</title>
+<meta name="description" content="Create professional line sheets for your wholesale, fashion, or jewelry brand. Upload product images, customize layouts, crop photos, and export to PDF — all free, no sign-up required.">
+<meta name="keywords" content="line sheet maker, line sheet creator, wholesale line sheet, fashion line sheet, product catalog builder, free line sheet template, PDF line sheet, jewelry line sheet, wholesale catalog">
+<meta name="author" content="LineSheet Studio">
+<link rel="canonical" href="https://mizo015.github.io/line-sheet/">
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="LineSheet Studio — Free Online Line Sheet Maker">
+<meta property="og:description" content="Create professional line sheets for wholesale and fashion brands. Upload images, customize layouts, and export to PDF — free, no sign-up.">
+<meta property="og:url" content="https://mizo015.github.io/line-sheet/">
+<meta property="og:site_name" content="LineSheet Studio">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LineSheet Studio — Free Online Line Sheet Maker">
+<meta name="twitter:description" content="Create professional line sheets for wholesale and fashion brands. Upload images, customize layouts, and export to PDF.">
+
+<!-- Schema.org Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "LineSheet Studio",
+  "description": "Free online line sheet maker for wholesale, fashion, and jewelry brands. Create product catalogs with custom layouts and export to PDF.",
+  "url": "https://mizo015.github.io/line-sheet/",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": ["Image upload", "Drag and drop reorder", "Image cropping", "PDF export", "Print support", "Custom fonts", "Adjustable grid layout"]
+}
+</script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto:wght@400;500&family=Poppins:wght@400;600&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600&family=Nunito:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.css" rel="stylesheet"/>
@@ -307,11 +342,44 @@ body {
 }
 
 @media print {
-    .app-header, .controls-wrapper { display: none; }
+    .app-header, .controls-wrapper, .seo-content { display: none; }
+}
+
+.seo-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    color: #86868b;
+    font-size: 14px;
+    line-height: 1.7;
+    border-top: 1px solid #e5e5ea;
+}
+
+.seo-content h2 {
+    color: #1d1d1f;
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.seo-content h3 {
+    color: #1d1d1f;
+    font-size: 16px;
+    margin: 16px 0 8px;
+}
+
+.seo-content p {
+    margin-bottom: 12px;
 }
 </style>
 </head>
 <body>
+
+<noscript>
+    <div style="padding:40px;text-align:center;font-family:sans-serif;">
+        <h1>LineSheet Studio — Free Online Line Sheet Maker</h1>
+        <p>Create professional line sheets for wholesale, fashion, and jewelry brands. This application requires JavaScript to run.</p>
+    </div>
+</noscript>
 
 <!-- Logo & Header -->
 <header class="app-header">
@@ -785,6 +853,21 @@ document.querySelectorAll("input, select").forEach(el => {
 
 buildGrid();
 </script>
+
+<!-- SEO Content -->
+<section class="seo-content">
+    <h2>Free Online Line Sheet Maker</h2>
+    <p>LineSheet Studio is a free, browser-based tool for creating professional line sheets. Whether you're a fashion designer, jewelry brand, wholesale distributor, or small business owner, you can build beautiful product catalogs in minutes — no software to install, no account required.</p>
+
+    <h3>What is a Line Sheet?</h3>
+    <p>A line sheet is a sales document used by brands and wholesalers to showcase products to retail buyers. It typically includes product images, names, prices, and descriptions arranged in a clean grid layout. Line sheets are essential for trade shows, wholesale outreach, and B2B sales.</p>
+
+    <h3>How It Works</h3>
+    <p>Upload your product images, arrange them with drag and drop, customize fonts and layouts, then export as a high-quality PDF or print directly from your browser. Each page includes your custom header and footer for a polished, branded presentation.</p>
+
+    <h3>Features</h3>
+    <p>Drag-and-drop reordering, image cropping, multiple aspect ratios, 14+ modern fonts, adjustable grid columns, padding and gap controls, text capitalization options, paged PDF export with headers and footers, and browser printing — all completely free.</p>
+</section>
 
 </body>
 </html>
