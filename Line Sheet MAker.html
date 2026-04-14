@@ -491,11 +491,11 @@ printBtn.onclick = async function () {
     if (pages.length === 0) pages.push([]);
 
     // Build print HTML
-    let printHTML = `<html><head><style>
-        @page { size: A4; margin: 15mm; }
+    let printHTML = `<html><head><title>Line Sheet</title><style>
+        @page { size: A4; margin: 0; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: ${font}, sans-serif; }
-        .page { width: 100%; height: 100vh; position: relative; page-break-after: always; padding: 10px 0; }
+        .page { width: 100%; height: 100vh; position: relative; page-break-after: always; padding: 15mm; }
         .page:last-child { page-break-after: auto; }
         .header { text-align: center; font-size: ${fontSizeVal * 1.5}px; font-weight: bold; margin-bottom: 15px; }
         .grid { display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: ${gapVal}px; }
@@ -504,8 +504,8 @@ printBtn.onclick = async function () {
         .aspect-inner { position: absolute; inset: 0; }
         .cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .cell-title { text-align: center; padding: 5px; font-size: ${fontSizeVal}px; }
-        .footer { text-align: center; font-size: ${fontSizeVal}px; position: absolute; bottom: 30px; left: 0; right: 0; }
-        .page-num { text-align: right; font-size: ${fontSizeVal * 0.75}px; color: #999; position: absolute; bottom: 10px; right: 0; }
+        .footer { text-align: center; font-size: ${fontSizeVal}px; position: absolute; bottom: 20mm; left: 15mm; right: 15mm; }
+        .page-num { text-align: right; font-size: ${fontSizeVal * 0.75}px; color: #999; position: absolute; bottom: 15mm; right: 15mm; }
     </style></head><body>`;
 
     for (let p = 0; p < pages.length; p++) {
