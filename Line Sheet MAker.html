@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro Image Grid Builder</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto:wght@400;500&family=Poppins:wght@400;600&family=Montserrat:wght@400;600&family=Open+Sans:wght@400;600&family=Lato:wght@400;700&family=Playfair+Display:wght@400;700&family=Raleway:wght@400;600&family=Nunito:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.css" rel="stylesheet"/>
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: white;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.page-title-box {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-title-box input, .page-footer-box input {
+    border: none;
+    border-bottom: 2px solid #ddd;
+    width: 60%;
+    text-align: center;
+    padding: 10px;
+}
+
+.page-footer-box {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.grid {
+    display: grid;
+    background: white;
+}
+
+.cell {
+    border: 1px solid #eee;
+    background: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: red;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px 6px;
+    z-index: 2;
+}
+
+.aspect-wrapper {
+    width: 100%;
+    position: relative;
+}
+
+.aspect-inner {
+    position: absolute;
+    inset: 0;
+}
+
+.cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.title {
+    width: 100%;
+    border: none;
+    padding: 5px;
+    text-align: center;
+}
+
+.crop-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.crop-box {
+    background: white;
+    padding: 20px;
+}
+
+.cell[draggable="true"] {
+    cursor: grab;
+}
+
+.cell.dragging {
+    opacity: 0.4;
+}
+
+.cell.drag-over {
+    outline: 2px dashed #007bff;
+    outline-offset: -2px;
+}
+</style>
+</head>
+<body>
+
+<h2>Pro Image Grid Builder</h2>
+
+<div class="controls">
+Rows <input type="number" id="cols" value="3" min="1">
+Padding <input type="number" id="padding" value="10">
+Gap <input type="number" id="gap" value="20">
+
+Aspect 
+<select id="aspect">
+    <option value="1">1:1</option>
+    <option value="1.5">3:2</option>
+    <option value="0.75">4:3</option>
+    <option value="0">Free</option>
+</select>
+
+Font 
+<select id="fontFamily">
+    <option>Arial</option>
+    <option>Georgia</option>
+    <option>Helvetica</option>
+    <option>Times New Roman</option>
+    <option>Inter</option>
+    <option>Roboto</option>
+    <option>Poppins</option>
+    <option>Montserrat</option>
+    <option>Open Sans</option>
+    <option>Lato</option>
+    <option>Playfair Display</option>
+    <option>Raleway</option>
+    <option>Nunito</option>
+    <option>DM Sans</option>
+</select>
+
+Font Size <input type="number" id="fontSize" value="16">
+Rows/Page <input type="number" id="rowsPerPage" value="3" min="1">
+
+<input type="file" id="upload" multiple accept="image/*">
+
+<button onclick="addEmptyCell()">Add Cell</button>
+<button id="exportPNG">Export PNG</button>
+<button id="exportPDF">Download PDF</button>
+</div>
+
+<!-- PAGE MAIN TITLE -->
+<div class="page-title-box">
+    <input type="text" id="pageTitle" placeholder="Main Page Title">
+</div>
+
+<div id="grid" class="grid"></div>
+
+<!-- PAGE FOOTER -->
+<div class="page-footer-box">
+    <input type="text" id="pageFooter" placeholder="Page Footer">
+</div>
+
+<!-- Crop Modal -->
+<div class="crop-modal" id="cropModal">
+    <div class="crop-box">
+        <img id="cropImage" style="max-width:500px;">
+        <br><br>
+        <button id="cropSave">Crop</button>
+        <button onclick="closeCrop()">Cancel</button>
+    </div>
+</div>
+
+<script>
+let cells = [];
+let cropper;
+let currentIndex = null;
+let dragIndex = null;
+
+const grid = document.getElementById("grid");
+
+function buildGrid() {
+    const cols = +document.getElementById("cols").value;
+    const padding = +document.getElementById("padding").value;
+    const gap = +document.getElementById("gap").value;
+    const aspect = +document.getElementById("aspect").value;
+    const font = document.getElementById("fontFamily").value;
+    const fontSize = document.getElementById("fontSize").value;
+
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.style.gap = gap + "px";
+
+    document.getElementById("pageTitle").style.fontFamily = font;
+    document.getElementById("pageTitle").style.fontSize = (fontSize * 1.5) + "px";
+    document.getElementById("pageFooter").style.fontFamily = font;
+    document.getElementById("pageFooter").style.fontSize = fontSize + "px";
+
+    cells.forEach((cellData, index) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.style.padding = padding + "px";
+        cell.draggable = true;
+        cell.dataset.index = index;
+
+        cell.addEventListener("dragstart", (e) => {
+            dragIndex = index;
+            cell.classList.add("dragging");
+            e.dataTransfer.effectAllowed = "move";
+        });
+
+        cell.addEventListener("dragend", () => {
+            cell.classList.remove("dragging");
+            dragIndex = null;
+        });
+
+        cell.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            cell.classList.add("drag-over");
+        });
+
+        cell.addEventListener("dragleave", () => {
+            cell.classList.remove("drag-over");
+        });
+
+        cell.addEventListener("drop", (e) => {
+            e.preventDefault();
+            cell.classList.remove("drag-over");
+            if (dragIndex !== null && dragIndex !== index) {
+                const [moved] = cells.splice(dragIndex, 1);
+                cells.splice(index, 0, moved);
+                buildGrid();
+            }
+        });
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-btn";
+        removeBtn.innerText = "X";
+        removeBtn.onclick = () => removeCell(index);
+        cell.appendChild(removeBtn);
+
+        if (cellData.image) {
+            const wrapper = document.createElement("div");
+            if (aspect !== 0) {
+                wrapper.className = "aspect-wrapper";
+                wrapper.style.paddingTop = (100 / aspect) + "%";
+            }
+
+            const inner = document.createElement("div");
+            inner.className = "aspect-inner";
+
+            const img = document.createElement("img");
+            img.src = cellData.image;
+            img.onclick = () => openCrop(index);
+
+            inner.appendChild(img);
+            wrapper.appendChild(inner);
+            cell.appendChild(wrapper);
+        }
+
+        const title = document.createElement("input");
+        title.className = "title";
+        title.value = cellData.title || "";
+        title.style.fontFamily = font;
+        title.style.fontSize = fontSize + "px";
+        title.oninput = (e) => cells[index].title = e.target.value;
+
+        cell.appendChild(title);
+        grid.appendChild(cell);
+    });
+}
+
+function addEmptyCell() {
+    cells.push({ image: null, title: "" });
+    buildGrid();
+}
+
+function removeCell(index) {
+    cells.splice(index, 1);
+    buildGrid();
+}
+
+upload.onchange = function(e) {
+    const files = Array.from(e.target.files);
+
+    files.forEach(file => {
+
+        // Remove file extension safely (handles multiple dots)
+        const fileNameWithoutExtension = file.name.replace(/\.[^/.]+$/, "");
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            cells.push({
+                image: event.target.result,
+                title: fileNameWithoutExtension
+            });
+            buildGrid();
+        };
+
+        reader.readAsDataURL(file);
+    });
+
+    // Reset file input so same file can be re-uploaded if needed
+    upload.value = "";
+};
+
+function openCrop(index) {
+    currentIndex = index;
+    const modal = document.getElementById("cropModal");
+    const image = document.getElementById("cropImage");
+    image.src = cells[index].image;
+    modal.style.display = "flex";
+
+    cropper = new Cropper(image, {
+        aspectRatio: aspect.value == 0 ? NaN : aspect.value
+    });
+}
+
+document.getElementById("cropSave").onclick = function() {
+    const canvas = cropper.getCroppedCanvas();
+    cells[currentIndex].image = canvas.toDataURL();
+    cropper.destroy();
+    closeCrop();
+    buildGrid();
+};
+
+function closeCrop() {
+    document.getElementById("cropModal").style.display = "none";
+}
+
+exportPNG.onclick = function () {
+    html2canvas(document.body).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "grid.png";
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+};
+
+exportPDF.onclick = async function () {
+    const cols = +document.getElementById("cols").value;
+    const padding = +document.getElementById("padding").value;
+    const gapVal = +document.getElementById("gap").value;
+    const aspectVal = +document.getElementById("aspect").value;
+    const font = document.getElementById("fontFamily").value;
+    const fontSizeVal = document.getElementById("fontSize").value;
+    const rowsPerPage = +document.getElementById("rowsPerPage").value;
+    const headerText = document.getElementById("pageTitle").value;
+    const footerText = document.getElementById("pageFooter").value;
+
+    // Split cells into rows, then group rows into pages
+    const rows = [];
+    for (let i = 0; i < cells.length; i += cols) {
+        rows.push(cells.slice(i, i + cols));
+    }
+
+    const pages = [];
+    for (let i = 0; i < rows.length; i += rowsPerPage) {
+        pages.push(rows.slice(i, i + rowsPerPage));
+    }
+
+    if (pages.length === 0) pages.push([]);
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+    // Create an offscreen container for rendering each page
+    const offscreen = document.createElement("div");
+    offscreen.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;height:1123px;background:white;padding:20px;box-sizing:border-box;overflow:hidden;";
+    document.body.appendChild(offscreen);
+
+    for (let p = 0; p < pages.length; p++) {
+        offscreen.innerHTML = "";
+
+        // Header
+        const header = document.createElement("div");
+        header.style.cssText = `text-align:center;margin-bottom:20px;font-family:${font};font-size:${fontSizeVal * 1.5}px;font-weight:bold;`;
+        header.textContent = headerText;
+        offscreen.appendChild(header);
+
+        // Grid
+        const pageGrid = document.createElement("div");
+        pageGrid.style.cssText = `display:grid;grid-template-columns:repeat(${cols}, 1fr);gap:${gapVal}px;background:white;`;
+
+        const pageCells = pages[p].flat();
+        pageCells.forEach(cellData => {
+            const cell = document.createElement("div");
+            cell.style.cssText = `border:1px solid #eee;background:white;padding:${padding}px;overflow:hidden;`;
+
+            if (cellData.image) {
+                const wrapper = document.createElement("div");
+                wrapper.style.cssText = "width:100%;position:relative;";
+                if (aspectVal !== 0) {
+                    wrapper.style.paddingTop = (100 / aspectVal) + "%";
+                }
+
+                const inner = document.createElement("div");
+                inner.style.cssText = "position:absolute;inset:0;";
+
+                const img = document.createElement("img");
+                img.src = cellData.image;
+                img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+
+                inner.appendChild(img);
+                wrapper.appendChild(inner);
+                cell.appendChild(wrapper);
+            }
+
+            const title = document.createElement("div");
+            title.style.cssText = `text-align:center;padding:5px;font-family:${font};font-size:${fontSizeVal}px;`;
+            title.textContent = cellData.title || "";
+            cell.appendChild(title);
+
+            pageGrid.appendChild(cell);
+        });
+
+        offscreen.appendChild(pageGrid);
+
+        // Footer — pinned to bottom center
+        const footer = document.createElement("div");
+        footer.style.cssText = `text-align:center;font-family:${font};font-size:${fontSizeVal}px;position:absolute;bottom:40px;left:20px;right:20px;`;
+        footer.textContent = footerText;
+        offscreen.appendChild(footer);
+
+        // Page number — pinned to bottom right
+        const pageNum = document.createElement("div");
+        pageNum.style.cssText = `text-align:right;font-family:${font};font-size:${fontSizeVal * 0.75}px;color:#999;position:absolute;bottom:15px;right:20px;`;
+        pageNum.textContent = `Page ${p + 1} of ${pages.length}`;
+        offscreen.appendChild(pageNum);
+
+        // Wait for images to load
+        const imgs = offscreen.querySelectorAll("img");
+        await Promise.all(Array.from(imgs).map(img =>
+            img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
+        ));
+
+        const canvas = await html2canvas(offscreen, { scale: 2, useCORS: true });
+        const imgData = canvas.toDataURL("image/png");
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        if (p > 0) pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
+    }
+
+    document.body.removeChild(offscreen);
+    pdf.save("line-sheet.pdf");
+};
+
+document.querySelectorAll("input, select").forEach(el => {
+    el.addEventListener("change", buildGrid);
+});
+
+buildGrid();
+</script>
+
+</body>
+</html>
